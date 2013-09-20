@@ -1,0 +1,45 @@
+#-----------------------------------------------------------------------
+#Copyright 2013 Centrum Wiskunde & Informatica, Amsterdam
+#
+#Author: Daniel M. Pelt
+#Contact: D.M.Pelt@cwi.nl
+#Website: http://dmpelt.github.io/pynnfbp/
+#
+#
+#This file is part of the PyNN-FBP, a Python implementation of the
+#NN-FBP tomographic reconstruction method.
+#
+#PyNN-FBP is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#PyNN-FBP is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with PyNN-FBP. If not, see <http://www.gnu.org/licenses/>.
+#
+#-----------------------------------------------------------------------
+
+** Latest version can be found at http://dmpelt.github.io/pynnfbp/ **
+
+To install PyNN-FBP, simply run:
+
+python setup.py install
+
+To use PyNN-FBP, you need installed:
+
+- Numpy and scipy
+- PyTables
+- (for ASTRAProjector) The ASTRA toolbox (https://code.google.com/p/astra-toolbox/), with Python interface (https://github.com/dmpelt/pyastratoolbox)
+- (for SimplePyCUDAProjector) PyCUDA and pyfft.
+
+Examples can be found in the 'examples' directory. After installation, the examples can be run to show how the package is used.
+
+Running 'PaperExample.py' from the 'examples' directory should show comparable results to the threeshape experiment (Fig. 9a and Table 1) of [1].
+
+[1] Fast tomographic reconstruction from limited data using artificial neural networks, Daniel M. Pelt and Kees Joost Batenburg,
+    submitted for publication, 2013
