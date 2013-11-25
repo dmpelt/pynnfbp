@@ -169,7 +169,7 @@ class EDFSet(object):
         angles = self.angles.copy()
         if not self.nproj==None:
             picked = np.array(np.round(np.linspace(0,sino.shape[0],self.nproj,False)),dtype=np.int)
-            sino = sino[np.array(picked,:]
+            sino = sino[picked,:]
             angles = angles[picked]
         return (image,sino,angles)
 
