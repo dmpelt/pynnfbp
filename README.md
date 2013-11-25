@@ -18,4 +18,4 @@ Examples can be found in the `examples` directory. After installation, the examp
 
 Running `PaperExample.py` from the `examples` directory should show comparable results to the threeshape experiment (Fig. 9a and Table 1) of [1].
 
-[1] Fast tomographic reconstruction from limited data using artificial neural networks, Daniel M. Pelt and Kees Joost Batenburg, *submitted for publication*, 2013
+[1] Pelt, D., & Batenburg, K. (2013). Fast tomographic reconstruction from limited data using artificial neural networks. *Image Processing, IEEE Transactions on, 22*(12), pp.5238-5251.
