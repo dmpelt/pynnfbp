@@ -1,0 +1,225 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>A simple projector using the CPU: the SimpleCPUProjector module &mdash; PyNN-FBP 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PyNN-FBP 1.0 documentation" href="index.html" />
+    <link rel="next" title="A simple projector using PyCUDA: the SimplePyCUDAProjector module" href="cudaprojector.html" />
+    <link rel="prev" title="A projector using the ASTRA toolbox: the ASTRAProjector module" href="astraprojector.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="cudaprojector.html" title="A simple projector using PyCUDA: the SimplePyCUDAProjector module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="astraprojector.html" title="A projector using the ASTRA toolbox: the ASTRAProjector module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">PyNN-FBP 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-nnfbp.SimpleCPUProjector">
+<span id="a-simple-projector-using-the-cpu-the-simplecpuprojector-module"></span><h1>A simple projector using the CPU: the <tt class="xref py py-mod docutils literal"><span class="pre">SimpleCPUProjector</span></tt> module<a class="headerlink" href="#module-nnfbp.SimpleCPUProjector" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="nnfbp.SimpleCPUProjector.Projector">
+<em class="property">class </em><tt class="descclassname">nnfbp.SimpleCPUProjector.</tt><tt class="descname">Projector</tt><big>(</big><em>recSize</em>, <em>angles</em><big>)</big><a class="reference internal" href="_modules/nnfbp/SimpleCPUProjector.html#Projector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.SimpleCPUProjector.Projector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>Implementation of the projector interface using the CPU.</p>
+<p>A projector needs to implement:</p>
+<ul class="simple">
+<li>Forward projecting</li>
+<li>Back projecting</li>
+<li>Creating a FBP reconstruction with a custom filter</li>
+</ul>
+<p>You can use this class as an abstracted weight matrix <span class="math">\(W\)</span>: multiplying an instance
+<tt class="docutils literal"><span class="pre">proj</span></tt> of this class by an image results in a forward projection of the image, and multiplying
+<tt class="docutils literal"><span class="pre">proj.T</span></tt> by a sinogram results in a backprojection of the sinogram:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">proj</span> <span class="o">=</span> <span class="n">Projector</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">fp</span> <span class="o">=</span> <span class="n">proj</span><span class="o">*</span><span class="n">image</span>
+<span class="n">bp</span> <span class="o">=</span> <span class="n">proj</span><span class="o">.</span><span class="n">T</span><span class="o">*</span><span class="n">sinogram</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>recSize</strong> (<tt class="xref py py-class docutils literal"><span class="pre">int</span></tt>) &#8211; Width/height of the reconstruction volume. (only 2D squares are supported)</li>
+<li><strong>angles</strong> (<tt class="xref py py-class docutils literal"><span class="pre">numpy.ndarray</span></tt>) &#8211; Array with angles in radians.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="nnfbp.SimpleCPUProjector.Projector.backProject">
+<tt class="descname">backProject</tt><big>(</big><em>sino</em><big>)</big><a class="reference internal" href="_modules/nnfbp/SimpleCPUProjector.html#Projector.backProject"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.SimpleCPUProjector.Projector.backProject" title="Permalink to this definition">¶</a></dt>
+<dd><p>Backproject a sinogram.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sinogram</strong> (<tt class="xref py py-class docutils literal"><span class="pre">numpy.ndarray</span></tt>) &#8211; The sinogram data</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref py py-class docutils literal"><span class="pre">numpy.ndarray</span></tt> &#8211; The backprojection.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="nnfbp.SimpleCPUProjector.Projector.calcNextPowerOfTwo">
+<tt class="descname">calcNextPowerOfTwo</tt><big>(</big><em>val</em><big>)</big><a class="reference internal" href="_modules/nnfbp/SimpleCPUProjector.html#Projector.calcNextPowerOfTwo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.SimpleCPUProjector.Projector.calcNextPowerOfTwo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculated the power of two larger than <tt class="docutils literal"><span class="pre">val</span></tt>. Used internally.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nnfbp.SimpleCPUProjector.Projector.filterSinogram">
+<tt class="descname">filterSinogram</tt><big>(</big><em>filt</em>, <em>sino</em><big>)</big><a class="reference internal" href="_modules/nnfbp/SimpleCPUProjector.html#Projector.filterSinogram"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.SimpleCPUProjector.Projector.filterSinogram" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter a sinogram <tt class="docutils literal"><span class="pre">sino</span></tt> with filter <tt class="docutils literal"><span class="pre">filt</span></tt>. Used internally.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nnfbp.SimpleCPUProjector.Projector.forwProject">
+<tt class="descname">forwProject</tt><big>(</big><em>image</em><big>)</big><a class="reference internal" href="_modules/nnfbp/SimpleCPUProjector.html#Projector.forwProject"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.SimpleCPUProjector.Projector.forwProject" title="Permalink to this definition">¶</a></dt>
+<dd><p>Forward project an image.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>image</strong> (<tt class="xref py py-class docutils literal"><span class="pre">numpy.ndarray</span></tt>) &#8211; The image data.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref py py-class docutils literal"><span class="pre">numpy.ndarray</span></tt> &#8211; The forward projection.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="nnfbp.SimpleCPUProjector.Projector.reconstructWithFilter">
+<tt class="descname">reconstructWithFilter</tt><big>(</big><em>sinogram</em>, <em>filt</em><big>)</big><a class="reference internal" href="_modules/nnfbp/SimpleCPUProjector.html#Projector.reconstructWithFilter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.SimpleCPUProjector.Projector.reconstructWithFilter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a FBP reconstruction of the sinogram with a custom filter</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sinogram</strong> (<tt class="xref py py-class docutils literal"><span class="pre">numpy.ndarray</span></tt>) &#8211; The sinogram data</li>
+<li><strong>filt</strong> (<tt class="xref py py-class docutils literal"><span class="pre">numpy.ndarray</span></tt>) &#8211; 1D custom filter</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><tt class="xref py py-class docutils literal"><span class="pre">numpy.ndarray</span></tt> &#8211; The reconstruction.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nnfbp.SimpleCPUProjector.ProjectorTranspose">
+<em class="property">class </em><tt class="descclassname">nnfbp.SimpleCPUProjector.</tt><tt class="descname">ProjectorTranspose</tt><big>(</big><em>parentProj</em><big>)</big><a class="reference internal" href="_modules/nnfbp/SimpleCPUProjector.html#ProjectorTranspose"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.SimpleCPUProjector.ProjectorTranspose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements the <tt class="docutils literal"><span class="pre">proj.T</span></tt> functionality.</p>
+<p>Do not use directly, since it can be accessed as member <tt class="docutils literal"><span class="pre">.T</span></tt> of
+an <a class="reference internal" href="#nnfbp.SimpleCPUProjector.Projector" title="nnfbp.SimpleCPUProjector.Projector"><tt class="xref py py-class docutils literal"><span class="pre">Projector</span></tt></a> object.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="astraprojector.html"
+                        title="previous chapter">A projector using the ASTRA toolbox: the <tt class="docutils literal docutils literal"><span class="pre">ASTRAProjector</span></tt> module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="cudaprojector.html"
+                        title="next chapter">A simple projector using PyCUDA: the <tt class="docutils literal"><span class="pre">SimplePyCUDAProjector</span></tt> module</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/cpuprojector.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="cudaprojector.html" title="A simple projector using PyCUDA: the SimplePyCUDAProjector module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="astraprojector.html" title="A projector using the ASTRA toolbox: the ASTRAProjector module"
+             >previous</a> |</li>
+        <li><a href="index.html">PyNN-FBP 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Daniel M. Pelt.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

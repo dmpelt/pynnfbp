@@ -1,0 +1,374 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>nnfbp.DataSet &mdash; PyNN-FBP 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PyNN-FBP 1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">PyNN-FBP 1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for nnfbp.DataSet</h1><div class="highlight"><pre>
+<span class="c">#-----------------------------------------------------------------------</span>
+<span class="c">#Copyright 2013 Centrum Wiskunde &amp; Informatica, Amsterdam</span>
+<span class="c">#</span>
+<span class="c">#Author: Daniel M. Pelt</span>
+<span class="c">#Contact: D.M.Pelt@cwi.nl</span>
+<span class="c">#Website: http://dmpelt.github.io/pynnfbp/</span>
+<span class="c">#</span>
+<span class="c">#</span>
+<span class="c">#This file is part of the PyNN-FBP, a Python implementation of the</span>
+<span class="c">#NN-FBP tomographic reconstruction method.</span>
+<span class="c">#</span>
+<span class="c">#PyNN-FBP is free software: you can redistribute it and/or modify</span>
+<span class="c">#it under the terms of the GNU General Public License as published by</span>
+<span class="c">#the Free Software Foundation, either version 3 of the License, or</span>
+<span class="c">#(at your option) any later version.</span>
+<span class="c">#</span>
+<span class="c">#PyNN-FBP is distributed in the hope that it will be useful,</span>
+<span class="c">#but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c">#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the</span>
+<span class="c">#GNU General Public License for more details.</span>
+<span class="c">#</span>
+<span class="c">#You should have received a copy of the GNU General Public License</span>
+<span class="c">#along with PyNN-FBP. If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+<span class="c">#</span>
+<span class="c">#-----------------------------------------------------------------------</span>
+
+<span class="sd">&#39;&#39;&#39;This module has some implementations of the DataSet interface that is </span>
+<span class="sd">used in PyNN-FBP. A dataset should be an iterable object, that returns</span>
+<span class="sd">a :class:`tuple` of :class:`numpy.ndarray` (image, sinogram, angles). A</span>
+<span class="sd">dataset should also define the :class:`int` `nImages`, that gives the number</span>
+<span class="sd">of images in the set. A user can write other implementations suitable to</span>
+<span class="sd">their datasets.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="n">hastables</span><span class="o">=</span><span class="bp">True</span>
+<span class="k">try</span><span class="p">:</span>
+	<span class="kn">import</span> <span class="nn">tables</span> <span class="kn">as</span> <span class="nn">ts</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+	<span class="n">hastables</span><span class="o">=</span><span class="bp">False</span>
+
+<span class="n">hasfabio</span><span class="o">=</span><span class="bp">True</span>
+<span class="k">try</span><span class="p">:</span>
+	<span class="kn">import</span> <span class="nn">fabio</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+	<span class="n">hasfabio</span><span class="o">=</span><span class="bp">False</span>
+	
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.weave</span>
+
+
+<div class="viewcode-block" id="PhantomSet"><a class="viewcode-back" href="../../dataset.html#nnfbp.DataSet.PhantomSet">[docs]</a><span class="k">class</span> <span class="nc">PhantomSet</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Data set of phantom simulation data.</span>
+<span class="sd">    </span>
+<span class="sd">    :param proj: A projector.</span>
+<span class="sd">    :type proj: :class:`Projector` </span>
+<span class="sd">    :param phantom: A phantom (see :mod:`nnfbp.Phantoms`).</span>
+<span class="sd">    :type phantom: :class:`Phantom`</span>
+<span class="sd">    :param nImages: Number of images in the set.</span>
+<span class="sd">    :type nImages: :class:`int`</span>
+<span class="sd">    :param reduceFactor: Factor to reduce the number of detectors by.</span>
+<span class="sd">    :type reduceFactor: :class:`int`</span>
+<span class="sd">    :param I0: Number of virtual photon counts during Poisson noise addition.</span>
+<span class="sd">    :type I0: :class:`int`</span>
+<span class="sd">    :param recP: Projector to use for reconstructing the sinogram.</span>
+<span class="sd">    :type recP: :class:`Projector`</span>
+<span class="sd">    :param fwP: Projector to use for forward projecting the sinogram.</span>
+<span class="sd">    :type fwP: :class:`Projector`</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    
+    <span class="n">__meanImageShrinkCode</span><span class="o">=</span><span class="s">&quot;&quot;&quot;</span>
+<span class="s">        #pragma omp parallel for firstprivate(fac,sz)</span>
+<span class="s">        for(int x=0;x&lt;sz;x++){</span>
+<span class="s">            for(int y=0;y&lt;sz;y++){</span>
+<span class="s">                image(x,y)=0.;</span>
+<span class="s">                for(int x2=fac*x;x2&lt;fac*(x+1);x2++){</span>
+<span class="s">                    for(int y2=fac*y;y2&lt;fac*(y+1);y2++){</span>
+<span class="s">                        image(x,y)+=imageIn(x2,y2);</span>
+<span class="s">                    }</span>
+<span class="s">                }</span>
+<span class="s">                image(x,y)/=fac*fac;</span>
+<span class="s">            }</span>
+<span class="s">        }</span>
+<span class="s">        &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="PhantomSet.addnoisetosino"><a class="viewcode-back" href="../../dataset.html#nnfbp.DataSet.PhantomSet.addnoisetosino">[docs]</a>    <span class="k">def</span> <span class="nf">addnoisetosino</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">sinogramRaw</span><span class="p">):</span>
+        <span class="n">max_sinogramRaw</span> <span class="o">=</span> <span class="n">sinogramRaw</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">sinogramRawScaled</span> <span class="o">=</span> <span class="n">sinogramRaw</span> <span class="o">/</span> <span class="n">max_sinogramRaw</span>
+        <span class="n">sinogramCT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">I0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">sinogramRawScaled</span><span class="p">)</span>
+        <span class="n">sinogramCT_C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">sinogramCT</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">sinogramCT_C</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">sinogramCT_C</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">sinogramCT_C</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="n">sinogramCT</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">])</span>
+        <span class="n">sinogramCT_D</span> <span class="o">=</span> <span class="n">sinogramCT_C</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">I0</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">max_sinogramRaw</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">sinogramCT_D</span><span class="p">)</span>
+    </div>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">proj</span><span class="p">,</span><span class="n">phantom</span><span class="p">,</span><span class="n">nImages</span><span class="p">,</span><span class="n">reduceFactor</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">I0</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">recP</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">fwP</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">proj</span> <span class="o">=</span> <span class="n">proj</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ph</span> <span class="o">=</span> <span class="n">phantom</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nImages</span> <span class="o">=</span> <span class="n">nImages</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rF</span> <span class="o">=</span> <span class="n">reduceFactor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">I0</span> <span class="o">=</span> <span class="n">I0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">recP</span> <span class="o">=</span> <span class="n">recP</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fwP</span> <span class="o">=</span> <span class="n">fwP</span>
+        
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nImages</span>
+        
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">i</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Get item ``i`` from the set.</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: :class:`tuple` of :class:`numpy.ndarray` -- (image, sinogram, angles)</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">i</span><span class="o">&lt;</span><span class="mi">0</span> <span class="ow">or</span> <span class="n">i</span><span class="o">&gt;=</span><span class="bp">self</span><span class="o">.</span><span class="n">nImages</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">()</span>
+        <span class="n">imageIn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ph</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">fwP</span><span class="o">==</span><span class="bp">None</span><span class="p">:</span>
+            <span class="n">prj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fwP</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">prj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">proj</span>
+        <span class="n">sinoIn</span> <span class="o">=</span> <span class="n">prj</span><span class="o">*</span><span class="n">imageIn</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">I0</span><span class="o">==</span><span class="bp">None</span><span class="p">:</span>
+            <span class="n">sinoIn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">addnoisetosino</span><span class="p">(</span><span class="n">sinoIn</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">rF</span><span class="o">==</span><span class="bp">None</span><span class="p">:</span>
+            <span class="n">fac</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rF</span>
+            <span class="n">sz</span> <span class="o">=</span> <span class="n">imageIn</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">fac</span>
+            <span class="n">sino</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">sinoIn</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">sinoIn</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">fac</span><span class="p">))</span>
+            <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">sz</span><span class="p">,</span><span class="n">sz</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">sino</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">sino</span><span class="p">[:,</span><span class="n">q</span><span class="p">]</span> <span class="o">=</span> <span class="n">sinoIn</span><span class="p">[:,</span><span class="nb">range</span><span class="p">(</span><span class="n">fac</span><span class="o">*</span><span class="n">q</span><span class="p">,</span><span class="n">fac</span><span class="o">*</span><span class="p">(</span><span class="n">q</span><span class="o">+</span><span class="mi">1</span><span class="p">))]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">sino</span><span class="o">/=</span><span class="n">fac</span><span class="o">*</span><span class="n">fac</span>
+            <span class="n">scipy</span><span class="o">.</span><span class="n">weave</span><span class="o">.</span><span class="n">inline</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__meanImageShrinkCode</span><span class="p">,[</span><span class="s">&#39;sz&#39;</span><span class="p">,</span><span class="s">&#39;image&#39;</span><span class="p">,</span><span class="s">&#39;imageIn&#39;</span><span class="p">,</span><span class="s">&#39;fac&#39;</span><span class="p">],</span><span class="n">compiler</span> <span class="o">=</span> <span class="s">&#39;gcc&#39;</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">extra_link_args</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;-lgomp&#39;</span><span class="p">],</span><span class="n">extra_compile_args</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;-march=native&#39;</span><span class="p">,</span><span class="s">&#39;-fopenmp&#39;</span><span class="p">],</span><span class="n">type_converters</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">weave</span><span class="o">.</span><span class="n">converters</span><span class="o">.</span><span class="n">blitz</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sino</span> <span class="o">=</span> <span class="n">sinoIn</span>
+            <span class="n">image</span> <span class="o">=</span> <span class="n">imageIn</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">recP</span><span class="o">==</span><span class="bp">None</span><span class="p">:</span>
+            <span class="n">image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">recP</span><span class="o">.</span><span class="n">reconstruct</span><span class="p">(</span><span class="s">&#39;FBP_CUDA&#39;</span><span class="p">,</span><span class="n">sino</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">fwP</span><span class="o">==</span><span class="bp">None</span><span class="p">:</span>
+            <span class="n">fca</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fwP</span><span class="o">.</span><span class="n">nProj</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">proj</span><span class="o">.</span><span class="n">nProj</span>
+            <span class="n">sino</span> <span class="o">=</span> <span class="n">sino</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">sino</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">fca</span><span class="p">,:]</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">image</span><span class="p">,</span><span class="n">sino</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">proj</span><span class="o">.</span><span class="n">angles</span><span class="p">)</span> 
+        </div>
+<div class="viewcode-block" id="EDFSet"><a class="viewcode-back" href="../../dataset.html#nnfbp.DataSet.EDFSet">[docs]</a><span class="k">class</span> <span class="nc">EDFSet</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">imgfiles</span><span class="p">,</span><span class="n">sinofiles</span><span class="p">,</span><span class="n">angles</span><span class="p">,</span><span class="n">nproj</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">hasfabio</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;FabIO has to be installed to use EDFSet&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nImages</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">files</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">angles</span> <span class="o">=</span> <span class="n">angles</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nproj</span><span class="o">=</span><span class="n">nproj</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imgfiles</span> <span class="o">=</span> <span class="n">imgfiles</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sinofiles</span> <span class="o">=</span> <span class="n">sinofiles</span>
+        
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nImages</span>
+    
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">i</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Get image ``i`` from the set.</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: :class:`tuple` of :class:`numpy.ndarray` -- (image, sinogram, angles)</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">i</span><span class="o">&lt;</span><span class="mi">0</span> <span class="ow">or</span> <span class="n">i</span><span class="o">&gt;=</span><span class="bp">self</span><span class="o">.</span><span class="n">nImages</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">()</span>
+        <span class="n">fl</span> <span class="o">=</span> <span class="n">fabio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">imgfiles</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">fl</span><span class="o">.</span><span class="n">data</span>
+        <span class="n">fl</span> <span class="o">=</span> <span class="n">fabio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sinofiles</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">sino</span> <span class="o">=</span> <span class="n">fl</span><span class="o">.</span><span class="n">data</span>
+        <span class="n">angles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">angles</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">nproj</span><span class="o">==</span><span class="bp">None</span><span class="p">:</span>
+            <span class="n">picked</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">sino</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">nproj</span><span class="p">,</span><span class="bp">False</span><span class="p">)),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+            <span class="n">sino</span> <span class="o">=</span> <span class="n">sino</span><span class="p">[</span><span class="n">picked</span><span class="p">,:]</span>
+            <span class="n">angles</span> <span class="o">=</span> <span class="n">angles</span><span class="p">[</span><span class="n">picked</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">image</span><span class="p">,</span><span class="n">sino</span><span class="p">,</span><span class="n">angles</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="MATSet"><a class="viewcode-back" href="../../dataset.html#nnfbp.DataSet.MATSet">[docs]</a><span class="k">class</span> <span class="nc">MATSet</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">files</span><span class="p">,</span><span class="n">angles</span><span class="p">,</span><span class="n">nproj</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">sinoname</span><span class="o">=</span><span class="s">&#39;sino&#39;</span><span class="p">,</span><span class="n">recname</span><span class="o">=</span><span class="s">&#39;rec&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nImages</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">files</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">angles</span> <span class="o">=</span> <span class="n">angles</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nproj</span><span class="o">=</span><span class="n">nproj</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">files</span> <span class="o">=</span> <span class="n">files</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sinoname</span><span class="o">=</span><span class="n">sinoname</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">recname</span><span class="o">=</span><span class="n">recname</span>
+        
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nImages</span>
+    
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">i</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Get image ``i`` from the set.</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: :class:`tuple` of :class:`numpy.ndarray` -- (image, sinogram, angles)</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">i</span><span class="o">&lt;</span><span class="mi">0</span> <span class="ow">or</span> <span class="n">i</span><span class="o">&gt;=</span><span class="bp">self</span><span class="o">.</span><span class="n">nImages</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">()</span>
+        <span class="n">fl</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">loadmat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">fl</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">recname</span><span class="p">]</span>
+        <span class="n">sino</span> <span class="o">=</span> <span class="n">fl</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sinoname</span><span class="p">]</span>
+        <span class="n">angles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">angles</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">nproj</span><span class="o">==</span><span class="bp">None</span><span class="p">:</span>
+            <span class="n">picked</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">sino</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">nproj</span><span class="p">,</span><span class="bp">False</span><span class="p">)),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+            <span class="n">sino</span> <span class="o">=</span> <span class="n">sino</span><span class="p">[</span><span class="n">picked</span><span class="p">,:]</span>
+            <span class="n">angles</span> <span class="o">=</span> <span class="n">angles</span><span class="p">[</span><span class="n">picked</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s">&#39;mask&#39;</span> <span class="ow">in</span> <span class="n">fl</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">image</span><span class="p">,</span><span class="n">sino</span><span class="p">,</span><span class="n">angles</span><span class="p">,</span><span class="n">fl</span><span class="p">[</span><span class="s">&#39;mask&#39;</span><span class="p">])</span>  
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">image</span><span class="p">,</span><span class="n">sino</span><span class="p">,</span><span class="n">angles</span><span class="p">)</span>  
+
+        
+		
+    </div>
+<div class="viewcode-block" id="HDF5Set"><a class="viewcode-back" href="../../dataset.html#nnfbp.DataSet.HDF5Set">[docs]</a><span class="k">class</span> <span class="nc">HDF5Set</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Dataset defined by a HDF5 file. The HDF5 file should contain an array with the name </span>
+<span class="sd">    ``nameArray`` (default:``&#39;names&#39;``), which has a row for each image. The first column</span>
+<span class="sd">    gives the name of the array with the image data, the second column the name of the array</span>
+<span class="sd">    with sinogram data, and the optional third column should give the name of the array with angle data.</span>
+<span class="sd">    One can also define an array with the name ``globalAngles`` (default:``&#39;angles&#39;``), that gives the angle data</span>
+<span class="sd">    for all images.</span>
+<span class="sd">    </span>
+<span class="sd">    Example HDF5 file:</span>
+<span class="sd">    </span>
+<span class="sd">    - ``/names``: ``[ [&#39;img01&#39;,&#39;sino01&#39;],[&#39;img02&#39;,&#39;sino02&#39;]]``</span>
+<span class="sd">    - ``/img01``: :class:`numpy.ndarray` with an image</span>
+<span class="sd">    - ``/sino01``: :class:`numpy.ndarray` with a sinogram</span>
+<span class="sd">    - ``/img02``: :class:`numpy.ndarray` with an image</span>
+<span class="sd">    - ``/sino02``: :class:`numpy.ndarray` with a sinogram</span>
+<span class="sd">    - ``/angles``: :class:`numpy.ndarray` with angle data</span>
+<span class="sd">    </span>
+<span class="sd">    :param fn: Filename of the HDF5 file</span>
+<span class="sd">    :type fn: :class:`string`</span>
+<span class="sd">    :param nproj: Optional number of angles to downsample to</span>
+<span class="sd">    :type nproj: :class:`int`</span>
+<span class="sd">    :param nameArray: Array name of the nameArray (default:``&#39;names&#39;``)</span>
+<span class="sd">    :type nameArray: :class:`string`</span>
+<span class="sd">    :param globalAngles: Array name of the globalAngles (default:``&#39;angles&#39;``)</span>
+<span class="sd">    :type globalAngles: :class:`string`</span>
+<span class="sd">    :param normalize: Whether to normalize images to `(0,1)` range (default:``True``)</span>
+<span class="sd">    :type normalize: :class:`boolean`</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">fn</span><span class="p">,</span><span class="n">nproj</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">nameArray</span><span class="o">=</span><span class="s">&#39;names&#39;</span><span class="p">,</span><span class="n">globalAngles</span><span class="o">=</span><span class="s">&#39;angles&#39;</span><span class="p">,</span><span class="n">normalize</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">hastables</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;PyTables has to be installed to use HDF5Set&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fn</span> <span class="o">=</span> <span class="n">fn</span>
+        <span class="n">h5file</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">openFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fn</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">names</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">getNode</span><span class="p">(</span><span class="n">h5file</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">nameArray</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nImages</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">globalAngles</span> <span class="o">=</span> <span class="n">globalAngles</span>
+        <span class="n">h5file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">norm</span> <span class="o">=</span> <span class="n">normalize</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nproj</span> <span class="o">=</span> <span class="n">nproj</span>
+    
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nImages</span>
+    
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">i</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Get image ``i`` from the set.</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: :class:`tuple` of :class:`numpy.ndarray` -- (image, sinogram, angles)</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">i</span><span class="o">&lt;</span><span class="mi">0</span> <span class="ow">or</span> <span class="n">i</span><span class="o">&gt;=</span><span class="bp">self</span><span class="o">.</span><span class="n">nImages</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">()</span>
+        <span class="n">h5file</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">openFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fn</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">getNode</span><span class="p">(</span><span class="n">h5file</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="n">sino</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">getNode</span><span class="p">(</span><span class="n">h5file</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">&lt;</span><span class="mi">3</span><span class="p">:</span>
+            <span class="n">angles</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">getNode</span><span class="p">(</span><span class="n">h5file</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">globalAngles</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">angles</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">getNode</span><span class="p">(</span><span class="n">h5file</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="n">h5file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm</span><span class="p">:</span>
+            <span class="n">maxI</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+            <span class="n">image</span> <span class="o">/=</span> <span class="n">maxI</span>
+            <span class="n">sino</span> <span class="o">/=</span> <span class="n">maxI</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">nproj</span><span class="o">==</span><span class="bp">None</span><span class="p">:</span>
+            <span class="n">origNproj</span> <span class="o">=</span> <span class="n">sino</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">sino</span> <span class="o">=</span> <span class="n">sino</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">origNproj</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">nproj</span><span class="p">,</span><span class="bp">False</span><span class="p">)),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">),:]</span>
+            <span class="n">angles</span> <span class="o">=</span> <span class="n">angles</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">origNproj</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">nproj</span><span class="p">,</span><span class="bp">False</span><span class="p">)),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">image</span><span class="p">,</span><span class="n">sino</span><span class="p">,</span><span class="n">angles</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">PyNN-FBP 1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Daniel M. Pelt.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
