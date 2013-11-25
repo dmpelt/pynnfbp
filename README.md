@@ -3,6 +3,11 @@ pynnfbp
 
 Python implementation of the NN-FBP Algorithm, published in [1].
 
+[\[Latest Release\]](https://github.com/dmpelt/pynnfbp/releases/latest)
+[\[Releases / Version History\]](https://github.com/dmpelt/pynnfbp/releases)
+[\[Bug Tracker\]](https://github.com/dmpelt/pynnfbp/issues)
+[\[Documentation\]](http://dmpelt.github.io/pynnfbp/doc/index.html)
+
 To install PyNN-FBP, simply run:
 
 `python setup.py install`
