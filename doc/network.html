@@ -1,0 +1,202 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>The main module: the Network module &mdash; PyNN-FBP 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PyNN-FBP 1.0 documentation" href="index.html" />
+    <link rel="next" title="Training data used during network training: the TrainingData module" href="trainingdata.html" />
+    <link rel="prev" title="Welcome to PyNN-FBP’s documentation!" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="trainingdata.html" title="Training data used during network training: the TrainingData module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to PyNN-FBP’s documentation!"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">PyNN-FBP 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-nnfbp.Network">
+<span id="the-main-module-the-network-module"></span><h1>The main module: the <tt class="xref py py-mod docutils literal"><span class="pre">Network</span></tt> module<a class="headerlink" href="#module-nnfbp.Network" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="nnfbp.Network.Network">
+<em class="property">class </em><tt class="descclassname">nnfbp.Network.</tt><tt class="descname">Network</tt><big>(</big><em>nHiddenNodes</em>, <em>projector</em>, <em>trainData</em>, <em>valData</em>, <em>reductor=None</em>, <em>nTrain=1000000</em>, <em>nVal=1000000</em>, <em>tmpDir=None</em>, <em>createEmptyClass=False</em><big>)</big><a class="reference internal" href="_modules/nnfbp/Network.html#Network"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.Network.Network" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>The neural network object that performs all training and reconstruction.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>nHiddenNodes</strong> (<tt class="xref py py-class docutils literal"><span class="pre">int</span></tt>) &#8211; The number of hidden nodes in the network.</li>
+<li><strong>projector</strong> (A <tt class="docutils literal"><span class="pre">Projector</span></tt> object (see, for example: <a class="reference internal" href="cpuprojector.html#module-nnfbp.SimpleCPUProjector" title="nnfbp.SimpleCPUProjector"><tt class="xref py py-mod docutils literal"><span class="pre">nnfbp.SimpleCPUProjector</span></tt></a>)) &#8211; The projector to use.</li>
+<li><strong>trainData</strong> (A <tt class="docutils literal"><span class="pre">DataSet</span></tt> object (see: <a class="reference internal" href="dataset.html#module-nnfbp.DataSet" title="nnfbp.DataSet"><tt class="xref py py-mod docutils literal"><span class="pre">nnfbp.DataSet</span></tt></a>)) &#8211; The training data set.</li>
+<li><strong>valData</strong> (A <tt class="docutils literal"><span class="pre">DataSet</span></tt> object (see: <a class="reference internal" href="dataset.html#module-nnfbp.DataSet" title="nnfbp.DataSet"><tt class="xref py py-mod docutils literal"><span class="pre">nnfbp.DataSet</span></tt></a>)) &#8211; The validation data set.</li>
+<li><strong>reductor</strong> (A <tt class="docutils literal"><span class="pre">Reductor</span></tt> object (see: <a class="reference internal" href="reductors.html#module-nnfbp.Reductors" title="nnfbp.Reductors"><tt class="xref py py-mod docutils literal"><span class="pre">nnfbp.Reductors</span></tt></a>, default:<tt class="docutils literal"><span class="pre">LogSymReductor</span></tt>)) &#8211; Optional reductor to use.</li>
+<li><strong>nTrain</strong> (<tt class="xref py py-class docutils literal"><span class="pre">int</span></tt>) &#8211; Number of pixels to pick out of training set.</li>
+<li><strong>nVal</strong> (<tt class="xref py py-class docutils literal"><span class="pre">int</span></tt>) &#8211; Number of pixels to pick out of validation set.</li>
+<li><strong>tmpDir</strong> (<tt class="xref py py-class docutils literal"><span class="pre">string</span></tt>) &#8211; Optional temporary directory to use.</li>
+<li><strong>createEmptyClass</strong> (<tt class="xref py py-class docutils literal"><span class="pre">boolean</span></tt>) &#8211; Used internally when loading from disk, to create an empty object. Do not use directly.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="nnfbp.Network.Network.reconstruct">
+<tt class="descname">reconstruct</tt><big>(</big><em>sinogram</em><big>)</big><a class="reference internal" href="_modules/nnfbp/Network.html#Network.reconstruct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.Network.Network.reconstruct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reconstruct an image from a sinogram, after training.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sinogram</strong> (<tt class="xref py py-class docutils literal"><span class="pre">numpy.ndarray</span></tt>) &#8211; The sinogram to reconstruct.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="nnfbp.Network.Network.saveToDisk">
+<tt class="descname">saveToDisk</tt><big>(</big><em>fn</em><big>)</big><a class="reference internal" href="_modules/nnfbp/Network.html#Network.saveToDisk"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.Network.Network.saveToDisk" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save a trained network to disk, so that it can be used later
+without retraining.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fn</strong> (<tt class="xref py py-class docutils literal"><span class="pre">string</span></tt>) &#8211; Filename to save it to.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="nnfbp.Network.Network.train">
+<tt class="descname">train</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/nnfbp/Network.html#Network.train"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.Network.Network.train" title="Permalink to this definition">¶</a></dt>
+<dd><p>Train the network using the Levenberg-Marquardt method.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="nnfbp.Network.readFromDisk">
+<tt class="descclassname">nnfbp.Network.</tt><tt class="descname">readFromDisk</tt><big>(</big><em>fn</em>, <em>projector</em><big>)</big><a class="reference internal" href="_modules/nnfbp/Network.html#readFromDisk"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.Network.readFromDisk" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a saved network from disk. The specified projector should be
+similar to the one used during training.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>fn</strong> (<tt class="xref py py-class docutils literal"><span class="pre">string</span></tt>) &#8211; Filename to load network from.</li>
+<li><strong>projector</strong> (A <tt class="docutils literal"><span class="pre">Projector</span></tt> object (see, for example: <a class="reference internal" href="cpuprojector.html#module-nnfbp.SimpleCPUProjector" title="nnfbp.SimpleCPUProjector"><tt class="xref py py-mod docutils literal"><span class="pre">nnfbp.SimpleCPUProjector</span></tt></a>)) &#8211; Projector to use when reconstructing.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A <a class="reference internal" href="#nnfbp.Network.Network" title="nnfbp.Network.Network"><tt class="xref py py-class docutils literal"><span class="pre">nnfbp.Network.Network</span></tt></a> instance, ready to reconstruct with.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Welcome to PyNN-FBP&#8217;s documentation!</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="trainingdata.html"
+                        title="next chapter">Training data used during network training: the <tt class="docutils literal docutils literal"><span class="pre">TrainingData</span></tt> module</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/network.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="trainingdata.html" title="Training data used during network training: the TrainingData module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to PyNN-FBP’s documentation!"
+             >previous</a> |</li>
+        <li><a href="index.html">PyNN-FBP 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Daniel M. Pelt.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

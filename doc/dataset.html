@@ -1,0 +1,202 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Datasets: the DataSet module &mdash; PyNN-FBP 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PyNN-FBP 1.0 documentation" href="index.html" />
+    <link rel="next" title="Phantom images: the Phantoms module" href="phantom.html" />
+    <link rel="prev" title="Reducing the data size: the Reductors module" href="reductors.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="phantom.html" title="Phantom images: the Phantoms module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="reductors.html" title="Reducing the data size: the Reductors module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">PyNN-FBP 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-nnfbp.DataSet">
+<span id="datasets-the-dataset-module"></span><h1>Datasets: the <tt class="xref py py-mod docutils literal"><span class="pre">DataSet</span></tt> module<a class="headerlink" href="#module-nnfbp.DataSet" title="Permalink to this headline">¶</a></h1>
+<p>This module has some implementations of the DataSet interface that is 
+used in PyNN-FBP. A dataset should be an iterable object, that returns
+a <tt class="xref py py-class docutils literal"><span class="pre">tuple</span></tt> of <tt class="xref py py-class docutils literal"><span class="pre">numpy.ndarray</span></tt> (image, sinogram, angles). A
+dataset should also define the <tt class="xref py py-class docutils literal"><span class="pre">int</span></tt> <cite>nImages</cite>, that gives the number
+of images in the set. A user can write other implementations suitable to
+their datasets.</p>
+<dl class="class">
+<dt id="nnfbp.DataSet.EDFSet">
+<em class="property">class </em><tt class="descclassname">nnfbp.DataSet.</tt><tt class="descname">EDFSet</tt><big>(</big><em>imgfiles</em>, <em>sinofiles</em>, <em>angles</em>, <em>nproj=None</em><big>)</big><a class="reference internal" href="_modules/nnfbp/DataSet.html#EDFSet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.DataSet.EDFSet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="nnfbp.DataSet.HDF5Set">
+<em class="property">class </em><tt class="descclassname">nnfbp.DataSet.</tt><tt class="descname">HDF5Set</tt><big>(</big><em>fn</em>, <em>nproj=None</em>, <em>nameArray='names'</em>, <em>globalAngles='angles'</em>, <em>normalize=True</em><big>)</big><a class="reference internal" href="_modules/nnfbp/DataSet.html#HDF5Set"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.DataSet.HDF5Set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>Dataset defined by a HDF5 file. The HDF5 file should contain an array with the name 
+<tt class="docutils literal"><span class="pre">nameArray</span></tt> (default:<tt class="docutils literal"><span class="pre">'names'</span></tt>), which has a row for each image. The first column
+gives the name of the array with the image data, the second column the name of the array
+with sinogram data, and the optional third column should give the name of the array with angle data.
+One can also define an array with the name <tt class="docutils literal"><span class="pre">globalAngles</span></tt> (default:<tt class="docutils literal"><span class="pre">'angles'</span></tt>), that gives the angle data
+for all images.</p>
+<p>Example HDF5 file:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">/names</span></tt>: <tt class="docutils literal"><span class="pre">[</span> <span class="pre">['img01','sino01'],['img02','sino02']]</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">/img01</span></tt>: <tt class="xref py py-class docutils literal"><span class="pre">numpy.ndarray</span></tt> with an image</li>
+<li><tt class="docutils literal"><span class="pre">/sino01</span></tt>: <tt class="xref py py-class docutils literal"><span class="pre">numpy.ndarray</span></tt> with a sinogram</li>
+<li><tt class="docutils literal"><span class="pre">/img02</span></tt>: <tt class="xref py py-class docutils literal"><span class="pre">numpy.ndarray</span></tt> with an image</li>
+<li><tt class="docutils literal"><span class="pre">/sino02</span></tt>: <tt class="xref py py-class docutils literal"><span class="pre">numpy.ndarray</span></tt> with a sinogram</li>
+<li><tt class="docutils literal"><span class="pre">/angles</span></tt>: <tt class="xref py py-class docutils literal"><span class="pre">numpy.ndarray</span></tt> with angle data</li>
+</ul>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>fn</strong> (<tt class="xref py py-class docutils literal"><span class="pre">string</span></tt>) &#8211; Filename of the HDF5 file</li>
+<li><strong>nproj</strong> (<tt class="xref py py-class docutils literal"><span class="pre">int</span></tt>) &#8211; Optional number of angles to downsample to</li>
+<li><strong>nameArray</strong> (<tt class="xref py py-class docutils literal"><span class="pre">string</span></tt>) &#8211; Array name of the nameArray (default:<tt class="docutils literal"><span class="pre">'names'</span></tt>)</li>
+<li><strong>globalAngles</strong> (<tt class="xref py py-class docutils literal"><span class="pre">string</span></tt>) &#8211; Array name of the globalAngles (default:<tt class="docutils literal"><span class="pre">'angles'</span></tt>)</li>
+<li><strong>normalize</strong> (<tt class="xref py py-class docutils literal"><span class="pre">boolean</span></tt>) &#8211; Whether to normalize images to <cite>(0,1)</cite> range (default:<tt class="docutils literal"><span class="pre">True</span></tt>)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="nnfbp.DataSet.MATSet">
+<em class="property">class </em><tt class="descclassname">nnfbp.DataSet.</tt><tt class="descname">MATSet</tt><big>(</big><em>files</em>, <em>angles</em>, <em>nproj=None</em>, <em>sinoname='sino'</em>, <em>recname='rec'</em><big>)</big><a class="reference internal" href="_modules/nnfbp/DataSet.html#MATSet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.DataSet.MATSet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="nnfbp.DataSet.PhantomSet">
+<em class="property">class </em><tt class="descclassname">nnfbp.DataSet.</tt><tt class="descname">PhantomSet</tt><big>(</big><em>proj</em>, <em>phantom</em>, <em>nImages</em>, <em>reduceFactor=None</em>, <em>I0=None</em>, <em>recP=None</em>, <em>fwP=None</em><big>)</big><a class="reference internal" href="_modules/nnfbp/DataSet.html#PhantomSet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.DataSet.PhantomSet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>Data set of phantom simulation data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>proj</strong> (<tt class="xref py py-class docutils literal"><span class="pre">Projector</span></tt>) &#8211; A projector.</li>
+<li><strong>phantom</strong> (<tt class="xref py py-class docutils literal"><span class="pre">Phantom</span></tt>) &#8211; A phantom (see <a class="reference internal" href="phantom.html#module-nnfbp.Phantoms" title="nnfbp.Phantoms"><tt class="xref py py-mod docutils literal"><span class="pre">nnfbp.Phantoms</span></tt></a>).</li>
+<li><strong>nImages</strong> (<tt class="xref py py-class docutils literal"><span class="pre">int</span></tt>) &#8211; Number of images in the set.</li>
+<li><strong>reduceFactor</strong> (<tt class="xref py py-class docutils literal"><span class="pre">int</span></tt>) &#8211; Factor to reduce the number of detectors by.</li>
+<li><strong>I0</strong> (<tt class="xref py py-class docutils literal"><span class="pre">int</span></tt>) &#8211; Number of virtual photon counts during Poisson noise addition.</li>
+<li><strong>recP</strong> (<tt class="xref py py-class docutils literal"><span class="pre">Projector</span></tt>) &#8211; Projector to use for reconstructing the sinogram.</li>
+<li><strong>fwP</strong> (<tt class="xref py py-class docutils literal"><span class="pre">Projector</span></tt>) &#8211; Projector to use for forward projecting the sinogram.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="nnfbp.DataSet.PhantomSet.addnoisetosino">
+<tt class="descname">addnoisetosino</tt><big>(</big><em>sinogramRaw</em><big>)</big><a class="reference internal" href="_modules/nnfbp/DataSet.html#PhantomSet.addnoisetosino"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.DataSet.PhantomSet.addnoisetosino" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="reductors.html"
+                        title="previous chapter">Reducing the data size: the <tt class="docutils literal docutils literal"><span class="pre">Reductors</span></tt> module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="phantom.html"
+                        title="next chapter">Phantom images: the <tt class="docutils literal"><span class="pre">Phantoms</span></tt> module</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/dataset.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="phantom.html" title="Phantom images: the Phantoms module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="reductors.html" title="Reducing the data size: the Reductors module"
+             >previous</a> |</li>
+        <li><a href="index.html">PyNN-FBP 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Daniel M. Pelt.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

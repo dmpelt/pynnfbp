@@ -1,0 +1,243 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Training data used during network training: the TrainingData module &mdash; PyNN-FBP 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PyNN-FBP 1.0 documentation" href="index.html" />
+    <link rel="next" title="A projector using the ASTRA toolbox: the ASTRAProjector module" href="astraprojector.html" />
+    <link rel="prev" title="The main module: the Network module" href="network.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="astraprojector.html" title="A projector using the ASTRA toolbox: the ASTRAProjector module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="network.html" title="The main module: the Network module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">PyNN-FBP 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-nnfbp.TrainingData">
+<span id="training-data-used-during-network-training-the-trainingdata-module"></span><h1>Training data used during network training: the <tt class="xref py py-mod docutils literal"><span class="pre">TrainingData</span></tt> module<a class="headerlink" href="#module-nnfbp.TrainingData" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="nnfbp.TrainingData.HDF5TrainingData">
+<em class="property">class </em><tt class="descclassname">nnfbp.TrainingData.</tt><tt class="descname">HDF5TrainingData</tt><big>(</big><em>data</em>, <em>nPoints</em>, <em>network</em>, <em>blockSize=10000</em>, <em>compression='blosc'</em>, <em>comprl=9</em><big>)</big><a class="reference internal" href="_modules/nnfbp/TrainingData.html#HDF5TrainingData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.TrainingData.HDF5TrainingData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nnfbp.TrainingData.TrainingData" title="nnfbp.TrainingData.TrainingData"><tt class="xref py py-class docutils literal"><span class="pre">nnfbp.TrainingData.TrainingData</span></tt></a></p>
+<p>Implementation of <a class="reference internal" href="#nnfbp.TrainingData.TrainingData" title="nnfbp.TrainingData.TrainingData"><tt class="xref py py-class docutils literal"><span class="pre">TrainingData</span></tt></a> that uses a HDF5 file to store data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>compression</strong> (<tt class="xref py py-class docutils literal"><span class="pre">string</span></tt>) &#8211; Which PyTables compression option to use.</li>
+<li><strong>comprl</strong> (<tt class="xref py py-class docutils literal"><span class="pre">int</span></tt>) &#8211; Which PyTables compression level to use.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="nnfbp.TrainingData.HDF5TrainingData.addDataBlock">
+<tt class="descname">addDataBlock</tt><big>(</big><em>data</em>, <em>i</em><big>)</big><a class="reference internal" href="_modules/nnfbp/TrainingData.html#HDF5TrainingData.addDataBlock"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.TrainingData.HDF5TrainingData.addDataBlock" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nnfbp.TrainingData.HDF5TrainingData.getDataBlock">
+<tt class="descname">getDataBlock</tt><big>(</big><em>i</em><big>)</big><a class="reference internal" href="_modules/nnfbp/TrainingData.html#HDF5TrainingData.getDataBlock"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.TrainingData.HDF5TrainingData.getDataBlock" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nnfbp.TrainingData.HDF5TrainingData.normalizeData">
+<tt class="descname">normalizeData</tt><big>(</big><em>minL</em>, <em>maxL</em>, <em>minIn</em>, <em>maxIn</em><big>)</big><a class="reference internal" href="_modules/nnfbp/TrainingData.html#HDF5TrainingData.normalizeData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.TrainingData.HDF5TrainingData.normalizeData" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nnfbp.TrainingData.TrainingData">
+<em class="property">class </em><tt class="descclassname">nnfbp.TrainingData.</tt><tt class="descname">TrainingData</tt><big>(</big><em>data</em>, <em>nPoints</em>, <em>network</em>, <em>blockSize=10000</em><big>)</big><a class="reference internal" href="_modules/nnfbp/TrainingData.html#TrainingData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.TrainingData.TrainingData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>Base object of a class that represents training or validation data used
+during training of a network.</p>
+<p>An implementing class should define <tt class="docutils literal"><span class="pre">getDataBlock</span></tt>, <tt class="docutils literal"><span class="pre">addDataBlock</span></tt> and <tt class="docutils literal"><span class="pre">normalizeData</span></tt> methods. See,
+for example, <a class="reference internal" href="#nnfbp.TrainingData.HDF5TrainingData" title="nnfbp.TrainingData.HDF5TrainingData"><tt class="xref py py-class docutils literal"><span class="pre">HDF5TrainingData</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>data</strong> (<em>DataSet</em>) &#8211; Dataset to pick pixels from. (see <a class="reference internal" href="dataset.html#module-nnfbp.DataSet" title="nnfbp.DataSet"><tt class="xref py py-mod docutils literal"><span class="pre">nnfbp.DataSet</span></tt></a>)</li>
+<li><strong>nPoints</strong> (<tt class="xref py py-class docutils literal"><span class="pre">int</span></tt>) &#8211; Number of pixels to pick.</li>
+<li><strong>blockSize</strong> (<tt class="xref py py-class docutils literal"><span class="pre">int</span></tt>) &#8211; Size of each data block.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="nnfbp.TrainingData.TrainingData.addDataBlock">
+<tt class="descname">addDataBlock</tt><big>(</big><em>data</em>, <em>i</em><big>)</big><a class="reference internal" href="_modules/nnfbp/TrainingData.html#TrainingData.addDataBlock"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.TrainingData.TrainingData.addDataBlock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a block of data to the set.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>data</strong> (<tt class="xref py py-class docutils literal"><span class="pre">numpy.ndarray</span></tt>) &#8211; Block of data to add.</li>
+<li><strong>i</strong> (<tt class="xref py py-class docutils literal"><span class="pre">int</span></tt>) &#8211; Position to add block to.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="nnfbp.TrainingData.TrainingData.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/nnfbp/TrainingData.html#TrainingData.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.TrainingData.TrainingData.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close the underlying file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nnfbp.TrainingData.TrainingData.getDataBlock">
+<tt class="descname">getDataBlock</tt><big>(</big><em>i</em><big>)</big><a class="reference internal" href="_modules/nnfbp/TrainingData.html#TrainingData.getDataBlock"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.TrainingData.TrainingData.getDataBlock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a block of data from the set.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>i</strong> (<tt class="xref py py-class docutils literal"><span class="pre">int</span></tt>) &#8211; Position of block to get.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref py py-class docutils literal"><span class="pre">numpy.ndarray</span></tt> &#8211; Block of data.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="nnfbp.TrainingData.TrainingData.getMinMax">
+<tt class="descname">getMinMax</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/nnfbp/TrainingData.html#TrainingData.getMinMax"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.TrainingData.TrainingData.getMinMax" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the minimum and maximum values of each column of the entire set.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref py py-class docutils literal"><span class="pre">tuple</span></tt> with:</td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">minL</span></tt> &#8211; <tt class="xref py py-class docutils literal"><span class="pre">numpy.ndarray</span></tt> with minimum value of each column except last.</li>
+<li><tt class="docutils literal"><span class="pre">maxL</span></tt> &#8211; <tt class="xref py py-class docutils literal"><span class="pre">numpy.ndarray</span></tt> with minimum value of each column except last.</li>
+<li><tt class="docutils literal"><span class="pre">minIn</span></tt> &#8211; <tt class="xref py py-class docutils literal"><span class="pre">float</span></tt> minimum values of last column.</li>
+<li><tt class="docutils literal"><span class="pre">maxIn</span></tt> &#8211; <tt class="xref py py-class docutils literal"><span class="pre">float</span></tt> maximum values of last column.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="nnfbp.TrainingData.TrainingData.normalizeData">
+<tt class="descname">normalizeData</tt><big>(</big><em>minL</em>, <em>maxL</em>, <em>minIn</em>, <em>maxIn</em><big>)</big><a class="reference internal" href="_modules/nnfbp/TrainingData.html#TrainingData.normalizeData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nnfbp.TrainingData.TrainingData.normalizeData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Normalize the set such that every column is in range (0,1), except for the last column,
+which will be normalized to (0.25,0.75). Parameters are like <tt class="docutils literal"><span class="pre">getMinMax()</span></tt>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="network.html"
+                        title="previous chapter">The main module: the <tt class="docutils literal docutils literal docutils literal"><span class="pre">Network</span></tt> module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="astraprojector.html"
+                        title="next chapter">A projector using the ASTRA toolbox: the <tt class="docutils literal docutils literal docutils literal"><span class="pre">ASTRAProjector</span></tt> module</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/trainingdata.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="astraprojector.html" title="A projector using the ASTRA toolbox: the ASTRAProjector module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="network.html" title="The main module: the Network module"
+             >previous</a> |</li>
+        <li><a href="index.html">PyNN-FBP 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Daniel M. Pelt.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

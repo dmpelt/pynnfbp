@@ -1,0 +1,294 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>nnfbp.Phantoms &mdash; PyNN-FBP 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PyNN-FBP 1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">PyNN-FBP 1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for nnfbp.Phantoms</h1><div class="highlight"><pre>
+<span class="c">#-----------------------------------------------------------------------</span>
+<span class="c">#Copyright 2013 Centrum Wiskunde &amp; Informatica, Amsterdam</span>
+<span class="c">#</span>
+<span class="c">#Author: Daniel M. Pelt</span>
+<span class="c">#Contact: D.M.Pelt@cwi.nl</span>
+<span class="c">#Website: http://dmpelt.github.io/pynnfbp/</span>
+<span class="c">#</span>
+<span class="c">#</span>
+<span class="c">#This file is part of the PyNN-FBP, a Python implementation of the</span>
+<span class="c">#NN-FBP tomographic reconstruction method.</span>
+<span class="c">#</span>
+<span class="c">#PyNN-FBP is free software: you can redistribute it and/or modify</span>
+<span class="c">#it under the terms of the GNU General Public License as published by</span>
+<span class="c">#the Free Software Foundation, either version 3 of the License, or</span>
+<span class="c">#(at your option) any later version.</span>
+<span class="c">#</span>
+<span class="c">#PyNN-FBP is distributed in the hope that it will be useful,</span>
+<span class="c">#but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c">#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the</span>
+<span class="c">#GNU General Public License for more details.</span>
+<span class="c">#</span>
+<span class="c">#You should have received a copy of the GNU General Public License</span>
+<span class="c">#along with PyNN-FBP. If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+<span class="c">#</span>
+<span class="c">#-----------------------------------------------------------------------</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.weave</span>
+<span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">Random</span>
+<span class="n">random</span> <span class="o">=</span> <span class="n">Random</span><span class="p">()</span>
+<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="n">addEllipseCode</span><span class="o">=</span><span class="s">&quot;&quot;&quot;</span>
+<span class="s">    double center = (size-1.)/2.;</span>
+<span class="s">    unsigned int max = size*size/4;</span>
+<span class="s">    double a2 = a*a;</span>
+<span class="s">    double b2 = b*b;</span>
+<span class="s">    double diffx,diffy,val1,val2;</span>
+<span class="s">    #pragma omp parallel for firstprivate(center,max,a2,b2,v) private(diffx,diffy,val1,val2) if (size&gt;64)</span>
+<span class="s">    for(int i=0;i&lt;size;i++){</span>
+<span class="s">        for(int j=0;j&lt;size;j++){</span>
+<span class="s">            diffx = (i+1)-xc;</span>
+<span class="s">            diffy = (j+1)-yc;</span>
+<span class="s">            val1 = (diffx*cosa+diffy*sina);</span>
+<span class="s">            val2 = (diffx*sina - diffy*cosa);</span>
+<span class="s">            if(val1*val1/a2+val2*val2/b2&lt;=1){</span>
+<span class="s">                img[size*j+i] = v;</span>
+<span class="s">            }</span>
+<span class="s">        }</span>
+<span class="s">    }</span>
+<span class="s">&quot;&quot;&quot;</span>
+
+<span class="n">addGaussianCode</span><span class="o">=</span><span class="s">&quot;&quot;&quot;</span>
+<span class="s">    #pragma omp parallel for firstprivate(a,xc,xs2,yc,ys2,cs2) if (size&gt;64)</span>
+<span class="s">    for(int i=0;i&lt;size;i++){</span>
+<span class="s">        for(int j=0;j&lt;size;j++){</span>
+<span class="s">            img[size*j+i] += a*exp(-((i-xc)*(i-xc)*xs2 + (j-yc)*(j-yc)*ys2 + 2*(i-xc)*(j-yc)*cs2));</span>
+<span class="s">        }</span>
+<span class="s">    }</span>
+<span class="s">&quot;&quot;&quot;</span>
+
+<span class="n">addRectangleCode</span><span class="o">=</span><span class="s">&quot;&quot;&quot;</span>
+<span class="s">    double xrot,yrot;</span>
+<span class="s">    #pragma omp parallel for firstprivate(a,xc,ct,yc,st,w2,h2) private(xrot,yrot) if (size&gt;64)</span>
+<span class="s">    for(int i=0;i&lt;size;i++){</span>
+<span class="s">        for(int j=0;j&lt;size;j++){</span>
+<span class="s">            xrot = ct*(i-xc)-st*(j-yc);</span>
+<span class="s">            yrot = st*(i-xc)+ct*(j-yc);</span>
+<span class="s">            if(xrot&gt;=-w2&amp;&amp;xrot&lt;=w2&amp;&amp;yrot&gt;=-h2&amp;&amp;yrot&lt;=h2) img[size*j+i]=a;</span>
+<span class="s">        }</span>
+<span class="s">    }</span>
+<span class="s">&quot;&quot;&quot;</span>
+
+<span class="n">addSiemensCode</span><span class="o">=</span><span class="s">&quot;&quot;&quot;</span>
+<span class="s">    double dx,dy,rpos,tpos;</span>
+<span class="s">    #pragma omp parallel for firstprivate(a,xc,theta,spokeRange,r2) private(dx,dy,rpos,tpos) if (size&gt;64)</span>
+<span class="s">    for(int i=0;i&lt;size;i++){</span>
+<span class="s">        for(int j=0;j&lt;size;j++){</span>
+<span class="s">            dx = (i-xc);</span>
+<span class="s">            dy = (j-yc);</span>
+<span class="s">            rpos = dx*dx+dy*dy;</span>
+<span class="s">            tpos = atan2(dy,dx)-theta;</span>
+<span class="s">            while(tpos&lt;0) tpos+=M_PI;</span>
+<span class="s">            if(((int)(tpos/spokeRange))%2==0){</span>
+<span class="s">                if(rpos&lt;=r2) img[size*j+i]+=a;</span>
+<span class="s">            }            </span>
+<span class="s">        }</span>
+<span class="s">    }</span>
+<span class="s">&quot;&quot;&quot;</span>
+
+<span class="k">def</span> <span class="nf">_addSiemensStar</span><span class="p">(</span><span class="n">img</span><span class="p">,</span><span class="n">xc</span><span class="p">,</span><span class="n">yc</span><span class="p">,</span><span class="n">a</span><span class="p">,</span><span class="n">r</span><span class="p">,</span><span class="n">npoints</span><span class="p">,</span><span class="n">theta</span><span class="p">):</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">spokeRange</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="n">npoints</span>
+    <span class="n">r2</span> <span class="o">=</span><span class="n">r</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">scipy</span><span class="o">.</span><span class="n">weave</span><span class="o">.</span><span class="n">inline</span><span class="p">(</span><span class="n">addSiemensCode</span><span class="p">,[</span><span class="s">&#39;img&#39;</span><span class="p">,</span><span class="s">&#39;size&#39;</span><span class="p">,</span><span class="s">&#39;xc&#39;</span><span class="p">,</span><span class="s">&#39;yc&#39;</span><span class="p">,</span><span class="s">&#39;a&#39;</span><span class="p">,</span><span class="s">&#39;spokeRange&#39;</span><span class="p">,</span><span class="s">&#39;theta&#39;</span><span class="p">,</span><span class="s">&#39;r2&#39;</span><span class="p">],</span><span class="n">compiler</span> <span class="o">=</span> <span class="s">&#39;gcc&#39;</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">extra_compile_args</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;-march=native&#39;</span><span class="p">,</span><span class="s">&#39;-fopenmp&#39;</span><span class="p">],</span><span class="n">extra_link_args</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;-lgomp&#39;</span><span class="p">])</span>
+    
+
+<span class="k">def</span> <span class="nf">_addEllipse</span><span class="p">(</span><span class="n">img</span><span class="p">,</span><span class="n">xc</span><span class="p">,</span><span class="n">yc</span><span class="p">,</span><span class="n">angle</span><span class="p">,</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">v</span><span class="p">):</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">cosa</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
+    <span class="n">sina</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
+    <span class="n">scipy</span><span class="o">.</span><span class="n">weave</span><span class="o">.</span><span class="n">inline</span><span class="p">(</span><span class="n">addEllipseCode</span><span class="p">,[</span><span class="s">&#39;img&#39;</span><span class="p">,</span><span class="s">&#39;size&#39;</span><span class="p">,</span><span class="s">&#39;xc&#39;</span><span class="p">,</span><span class="s">&#39;yc&#39;</span><span class="p">,</span><span class="s">&#39;cosa&#39;</span><span class="p">,</span><span class="s">&#39;sina&#39;</span><span class="p">,</span><span class="s">&#39;a&#39;</span><span class="p">,</span><span class="s">&#39;b&#39;</span><span class="p">,</span><span class="s">&#39;v&#39;</span><span class="p">],</span><span class="n">compiler</span> <span class="o">=</span> <span class="s">&#39;gcc&#39;</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">extra_compile_args</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;-march=native&#39;</span><span class="p">,</span><span class="s">&#39;-fopenmp&#39;</span><span class="p">],</span><span class="n">extra_link_args</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;-lgomp&#39;</span><span class="p">])</span>
+
+<span class="k">def</span> <span class="nf">_addGaussianBlob</span><span class="p">(</span><span class="n">img</span><span class="p">,</span><span class="n">xc</span><span class="p">,</span><span class="n">yc</span><span class="p">,</span><span class="n">a</span><span class="p">,</span><span class="n">xs</span><span class="p">,</span><span class="n">ys</span><span class="p">,</span><span class="n">theta</span><span class="p">):</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">xs2</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">xs</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">+</span><span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">ys</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">cs2</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">theta</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="n">ys</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">theta</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="n">xs</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">ys2</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">xs</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">+</span><span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">ys</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">scipy</span><span class="o">.</span><span class="n">weave</span><span class="o">.</span><span class="n">inline</span><span class="p">(</span><span class="n">addGaussianCode</span><span class="p">,[</span><span class="s">&#39;img&#39;</span><span class="p">,</span><span class="s">&#39;size&#39;</span><span class="p">,</span><span class="s">&#39;xc&#39;</span><span class="p">,</span><span class="s">&#39;yc&#39;</span><span class="p">,</span><span class="s">&#39;a&#39;</span><span class="p">,</span><span class="s">&#39;xs2&#39;</span><span class="p">,</span><span class="s">&#39;ys2&#39;</span><span class="p">,</span><span class="s">&#39;cs2&#39;</span><span class="p">],</span><span class="n">compiler</span> <span class="o">=</span> <span class="s">&#39;gcc&#39;</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">extra_compile_args</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;-march=native&#39;</span><span class="p">,</span><span class="s">&#39;-fopenmp&#39;</span><span class="p">],</span><span class="n">extra_link_args</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;-lgomp&#39;</span><span class="p">])</span>
+
+<span class="k">def</span> <span class="nf">_addRectangle</span><span class="p">(</span><span class="n">img</span><span class="p">,</span><span class="n">xc</span><span class="p">,</span><span class="n">yc</span><span class="p">,</span><span class="n">a</span><span class="p">,</span><span class="n">width</span><span class="p">,</span><span class="n">height</span><span class="p">,</span><span class="n">theta</span><span class="p">):</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">ct</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+    <span class="n">st</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+    <span class="n">w2</span> <span class="o">=</span> <span class="n">width</span><span class="o">/</span><span class="mi">2</span>
+    <span class="n">h2</span> <span class="o">=</span> <span class="n">height</span><span class="o">/</span><span class="mi">2</span>
+    <span class="n">scipy</span><span class="o">.</span><span class="n">weave</span><span class="o">.</span><span class="n">inline</span><span class="p">(</span><span class="n">addRectangleCode</span><span class="p">,[</span><span class="s">&#39;img&#39;</span><span class="p">,</span><span class="s">&#39;size&#39;</span><span class="p">,</span><span class="s">&#39;xc&#39;</span><span class="p">,</span><span class="s">&#39;yc&#39;</span><span class="p">,</span><span class="s">&#39;a&#39;</span><span class="p">,</span><span class="s">&#39;ct&#39;</span><span class="p">,</span><span class="s">&#39;st&#39;</span><span class="p">,</span><span class="s">&#39;w2&#39;</span><span class="p">,</span><span class="s">&#39;h2&#39;</span><span class="p">],</span><span class="n">compiler</span> <span class="o">=</span> <span class="s">&#39;gcc&#39;</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">extra_compile_args</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;-march=native&#39;</span><span class="p">,</span><span class="s">&#39;-fopenmp&#39;</span><span class="p">],</span><span class="n">extra_link_args</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;-lgomp&#39;</span><span class="p">])</span>
+    
+
+<div class="viewcode-block" id="Phantom"><a class="viewcode-back" href="../../phantom.html#nnfbp.Phantoms.Phantom">[docs]</a><span class="k">class</span> <span class="nc">Phantom</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; A base Phantom object to be used with :class:`nnfbp.DataSet.PhantomSet`. Implementing</span>
+<span class="sd">    objects should define a ``createPhantom(self,img)`` method, that creates a (random) phantom in</span>
+<span class="sd">    ``img``, a :class:`numpy.ndarray`.</span>
+<span class="sd">    </span>
+<span class="sd">    :param size: Number of rows/columns of the phantom. Only square phantoms are supported at the moment.</span>
+<span class="sd">    :type size: :class:`int`</span>
+<span class="sd">    :param rSeed: Optional random seed to use.</span>
+<span class="sd">    :type rSeed: :class:`int`</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">size</span><span class="p">,</span><span class="n">rSeed</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="o">=</span><span class="n">size</span>
+        <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">rSeed</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__setOutCircle</span><span class="p">()</span>
+    
+<div class="viewcode-block" id="Phantom.setRandomSeed"><a class="viewcode-back" href="../../phantom.html#nnfbp.Phantoms.Phantom.setRandomSeed">[docs]</a>    <span class="k">def</span> <span class="nf">setRandomSeed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">seed</span><span class="p">):</span>
+        <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    </div>
+    <span class="k">def</span> <span class="nf">__setOutCircle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Creates a :class:`numpy.ndarray` mask of a circle&#39;&#39;&#39;</span>
+        <span class="n">xx</span><span class="p">,</span> <span class="n">yy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mgrid</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span>
+        <span class="n">mid</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="o">-</span><span class="mf">1.</span><span class="p">)</span><span class="o">/</span><span class="mf">2.</span>
+        <span class="n">circle</span> <span class="o">=</span> <span class="p">(</span><span class="n">xx</span> <span class="o">-</span> <span class="n">mid</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">yy</span> <span class="o">-</span> <span class="n">mid</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="n">bnd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="mf">4.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outCircle</span><span class="o">=</span><span class="n">circle</span><span class="o">&gt;</span><span class="n">bnd</span>
+    
+<div class="viewcode-block" id="Phantom.clipCircle"><a class="viewcode-back" href="../../phantom.html#nnfbp.Phantoms.Phantom.clipCircle">[docs]</a>    <span class="k">def</span> <span class="nf">clipCircle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">img</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Zeroes elements outside circle.&#39;&#39;&#39;</span>
+        <span class="n">img</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">outCircle</span><span class="p">]</span><span class="o">=</span><span class="mi">0</span>
+    </div>
+<div class="viewcode-block" id="Phantom.get"><a class="viewcode-back" href="../../phantom.html#nnfbp.Phantoms.Phantom.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Return a random phantom image.&#39;&#39;&#39;</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">createPhantom</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">img</span>
+</div></div>
+<div class="viewcode-block" id="EightEllipses"><a class="viewcode-back" href="../../phantom.html#nnfbp.Phantoms.EightEllipses">[docs]</a><span class="k">class</span> <span class="nc">EightEllipses</span><span class="p">(</span><span class="n">Phantom</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Object that creates ``8Ellipses`` phantoms.</span>
+<span class="sd">    </span>
+<span class="sd">    :param size: Number of rows/columns of the phantom. Only square phantoms are supported at the moment.</span>
+<span class="sd">    :type size: :class:`int`</span>
+<span class="sd">    :param rSeed: Optional random seed to use.</span>
+<span class="sd">    :type rSeed: :class:`int`</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+<div class="viewcode-block" id="EightEllipses.createPhantom"><a class="viewcode-back" href="../../phantom.html#nnfbp.Phantoms.EightEllipses.createPhantom">[docs]</a>    <span class="k">def</span> <span class="nf">createPhantom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">img</span><span class="p">):</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span>
+        <span class="n">_addEllipse</span><span class="p">(</span><span class="n">img</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(),(</span><span class="mf">0.25</span><span class="o">+</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="o">/</span><span class="mi">6</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="o">/</span><span class="mi">6</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">_addEllipse</span><span class="p">(</span><span class="n">img</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(),(</span><span class="mf">0.25</span><span class="o">+</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="o">/</span><span class="mi">6</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="o">/</span><span class="mi">6</span><span class="p">,</span><span class="mf">0.875</span><span class="p">)</span>
+        <span class="n">_addEllipse</span><span class="p">(</span><span class="n">img</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(),(</span><span class="mf">0.25</span><span class="o">+</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="o">/</span><span class="mi">6</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="o">/</span><span class="mi">6</span><span class="p">,</span><span class="mf">0.75</span><span class="p">)</span>
+        <span class="n">_addEllipse</span><span class="p">(</span><span class="n">img</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(),(</span><span class="mf">0.25</span><span class="o">+</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="o">/</span><span class="mi">6</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="o">/</span><span class="mi">6</span><span class="p">,</span><span class="mf">0.625</span><span class="p">)</span>
+        <span class="n">_addEllipse</span><span class="p">(</span><span class="n">img</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(),(</span><span class="mf">0.25</span><span class="o">+</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="o">/</span><span class="mi">6</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="o">/</span><span class="mi">6</span><span class="p">,</span><span class="mf">0.5</span><span class="p">)</span>
+        <span class="n">_addEllipse</span><span class="p">(</span><span class="n">img</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(),(</span><span class="mf">0.25</span><span class="o">+</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="o">/</span><span class="mi">6</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="o">/</span><span class="mi">6</span><span class="p">,</span><span class="mf">0.375</span><span class="p">)</span>
+        <span class="n">_addEllipse</span><span class="p">(</span><span class="n">img</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(),(</span><span class="mf">0.25</span><span class="o">+</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="o">/</span><span class="mi">6</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="o">/</span><span class="mi">6</span><span class="p">,</span><span class="mf">0.25</span><span class="p">)</span>
+        <span class="n">_addEllipse</span><span class="p">(</span><span class="n">img</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(),(</span><span class="mf">0.25</span><span class="o">+</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="o">/</span><span class="mi">6</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="o">/</span><span class="mi">6</span><span class="p">,</span><span class="mf">0.125</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clipCircle</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="ThreeShape"><a class="viewcode-back" href="../../phantom.html#nnfbp.Phantoms.ThreeShape">[docs]</a><span class="k">class</span> <span class="nc">ThreeShape</span><span class="p">(</span><span class="n">Phantom</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Object that creates ``ThreeShape`` phantoms.</span>
+<span class="sd">    </span>
+<span class="sd">    :param size: Number of rows/columns of the phantom. Only square phantoms are supported at the moment.</span>
+<span class="sd">    :type size: :class:`int`</span>
+<span class="sd">    :param rSeed: Optional random seed to use.</span>
+<span class="sd">    :type rSeed: :class:`int`</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+<div class="viewcode-block" id="ThreeShape.createPhantom"><a class="viewcode-back" href="../../phantom.html#nnfbp.Phantoms.ThreeShape.createPhantom">[docs]</a>    <span class="k">def</span> <span class="nf">createPhantom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">img</span><span class="p">):</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span>
+        <span class="n">_addGaussianBlob</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">1.25</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(),</span> <span class="p">(</span><span class="mf">0.05</span><span class="o">+</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span><span class="o">*</span><span class="mf">0.1</span><span class="p">)</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.05</span><span class="o">+</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span><span class="o">*</span><span class="mf">0.1</span><span class="p">)</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+        <span class="n">_addGaussianBlob</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">1.25</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(),</span> <span class="p">(</span><span class="mf">0.05</span><span class="o">+</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span><span class="o">*</span><span class="mf">0.1</span><span class="p">)</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.05</span><span class="o">+</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span><span class="o">*</span><span class="mf">0.1</span><span class="p">)</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+        <span class="n">_addGaussianBlob</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">1.25</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(),</span> <span class="p">(</span><span class="mf">0.05</span><span class="o">+</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span><span class="o">*</span><span class="mf">0.1</span><span class="p">)</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.05</span><span class="o">+</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span><span class="o">*</span><span class="mf">0.1</span><span class="p">)</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+        <span class="n">img</span><span class="p">[</span><span class="n">img</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">]</span><span class="o">=</span><span class="mi">0</span>
+        <span class="n">_addRectangle</span><span class="p">(</span><span class="n">img</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(),(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,(</span><span class="mf">0.0125</span><span class="o">+</span><span class="mf">0.0375</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+        <span class="n">_addRectangle</span><span class="p">(</span><span class="n">img</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(),(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,(</span><span class="mf">0.0125</span><span class="o">+</span><span class="mf">0.0375</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+        <span class="n">_addRectangle</span><span class="p">(</span><span class="n">img</span><span class="p">,(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(),(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,(</span><span class="mf">0.0125</span><span class="o">+</span><span class="mf">0.0375</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+        <span class="n">_addSiemensStar</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(),(</span><span class="mf">0.025</span><span class="o">+</span><span class="mf">0.1</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span>
+        <span class="n">_addSiemensStar</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(),(</span><span class="mf">0.025</span><span class="o">+</span><span class="mf">0.1</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span>
+        <span class="n">_addSiemensStar</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.25</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(),(</span><span class="mf">0.025</span><span class="o">+</span><span class="mf">0.1</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span><span class="o">*</span><span class="n">size</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clipCircle</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+        <span class="n">img</span><span class="o">/=</span><span class="n">img</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        </div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">PyNN-FBP 1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Daniel M. Pelt.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
