@@ -34,7 +34,24 @@
         <h1>
 <a name="pynnfbp" class="anchor" href="#pynnfbp"><span class="octicon octicon-link"></span></a>pynnfbp</h1>
 
-<p>Python implementation of the NN-FBP Algorithm</p>
+<p>Python implementation of the NN-FBP Algorithm, published in [1].</p>
+
+<p>To install PyNN-FBP, simply run:</p>
+
+<p><code>python setup.py install</code></p>
+
+<p>To use PyNN-FBP, you need installed:</p>
+
+<ul>
+<li>Numpy and scipy</li>
+<li>PyTables</li>
+<li>(for ASTRAProjector) The ASTRA toolbox (<a href="https://code.google.com/p/astra-toolbox/">https://code.google.com/p/astra-toolbox/</a>), with Python interface (<a href="https://github.com/dmpelt/pyastratoolbox">https://github.com/dmpelt/pyastratoolbox</a>)</li>
+<li>(for SimplePyCUDAProjector) PyCUDA and pyfft.</li>
+</ul><p>Examples can be found in the <code>examples</code> directory. After installation, the examples can be run to show how the package is used.</p>
+
+<p>Running <code>PaperExample.py</code> from the <code>examples</code> directory should show comparable results to the threeshape experiment (Fig. 9a and Table 1) of [1].</p>
+
+<p>[1] Pelt, D., &amp; Batenburg, K. (2013). Fast tomographic reconstruction from limited data using artificial neural networks. <em>Image Processing, IEEE Transactions on, 22</em>(12), pp.5238-5251.</p>
       </section>
     </div>
 
