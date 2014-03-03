@@ -46,6 +46,7 @@ except ImportError:
 	
 import numpy as np
 import scipy.weave
+import scipy.io
 
 
 class PhantomSet(object):
