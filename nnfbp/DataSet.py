@@ -233,10 +233,7 @@ class DMPSet(object):
             picked = np.array(np.round(np.linspace(0,sino.shape[0],self.nproj,False)),dtype=np.int)
             sino = sino[picked,:]
             angles = angles[picked]
-        if 'mask' in fl:
-            return (image,sino,angles,fl['mask'])  
-        else:
-            return (image,sino,angles)  
+        return (image,sino,angles)  
 
 class MATSet(object):
     def __init__(self,files,angles,nproj=None,sinoname='sino',recname='rec'):
