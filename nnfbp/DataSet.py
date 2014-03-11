@@ -175,7 +175,7 @@ class EDFSet(object):
         return (image,sino,angles)
 
 class DMPSet(object):
-    def __init__(self,sinofiles,angles,recfiles=None,nproj=None,sinoSize=None,center=None,proj=None):
+    def __init__(self,sinofiles,angles,recfiles=None,nproj=None,sinoSize=None,center=None,proj=None,padType='constant'):
         self.nImages = len(sinofiles)
         self.angles = angles
         self.nproj=nproj
@@ -184,6 +184,7 @@ class DMPSet(object):
         self.sinoSize = sinoSize
         self.center = center
         self.p = proj
+        self.padType = padType
         
     def __len__(self):
         return self.nImages
@@ -200,14 +201,20 @@ class DMPSet(object):
         fd.close()
         return imageData.astype(np.float32)
     
-    def padAndCenter(self,sinoIn,sinoSize,center):
+    def padAndCenter(self,sinoIn,sinoSize,center,padType='constant'):
         sino = np.zeros((sinoIn.shape[0],sinoSize))
         shft = center-sinoIn.shape[1]/2
         lr = sino.shape[1]/2-sinoIn.shape[1]/2+shft
         rr = sino.shape[1]/2+sinoIn.shape[1]/2+shft
         sino[:,lr:rr]=sinoIn
-        sino[:,0:lr] = np.tile(sino[:,lr],(lr,1)).transpose()
-        sino[:,rr:sino.shape[1]] = np.tile(sino[:,rr-1],(sino.shape[1]-rr,1)).transpose()
+        if padType=='constant':
+            lw = np.tile(np.ones(lr),(sinoIn.shape[0],1))
+            rw = np.tile(np.ones(sino.shape[1]-rr),(sinoIn.shape[0],1))
+        elif padType=='sqrt':
+            lw = np.tile(np.sqrt(np.linspace(0,1,lr)),(sinoIn.shape[0],1))
+            rw = np.tile(np.sqrt(np.linspace(1,0,sino.shape[1]-rr)),(sinoIn.shape[0],1))
+        sino[:,0:lr] = lw*(np.tile(sino[:,lr],(lr,1)).transpose())
+        sino[:,rr:sino.shape[1]] = rw*(np.tile(sino[:,rr-1],(sino.shape[1]-rr,1)).transpose())
         return sino
         
     
@@ -223,7 +230,7 @@ class DMPSet(object):
         if self.sinoSize==None:
             sino = sinoIn
         else:
-            sino = self.padAndCenter(sinoIn,self.sinoSize,self.center)
+            sino = self.padAndCenter(sinoIn,self.sinoSize,self.center,padType=self.padType)
         angles = self.angles.copy()
         if self.rfiles==None:
             image = self.p.reconstruct('FBP_CUDA',sino)
