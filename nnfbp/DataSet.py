@@ -174,6 +174,70 @@ class EDFSet(object):
             angles = angles[picked]
         return (image,sino,angles)
 
+class DMPSet(object):
+    def __init__(self,sinofiles,angles,recfiles=None,nproj=None,sinoSize=None,center=None):
+        self.nImages = len(sinofiles)
+        self.angles = angles
+        self.nproj=nproj
+        self.sfiles = sinofiles
+        self.rfiles = recfiles
+        self.sinoSize = sinoSize
+        self.center = center
+        
+    def __len__(self):
+        return self.nImages
+    
+    def readImageDmp(self, filename ):
+        fd = open( filename , 'rb' )
+        datatype = 'h'
+        numberOfHeaderValues = 3
+        headerData = np.zeros(numberOfHeaderValues)
+        headerData = np.fromfile(fd, datatype, numberOfHeaderValues)
+        imageShape = (headerData[1], headerData[0])
+        imageData = np.fromfile(fd, np.float32, -1)
+        imageData = imageData.reshape(imageShape)
+        fd.close()
+        return imageData.astype(np.float32)
+    
+    def padAndCenter(self,sinoIn,sinoSize,center):
+        sino = np.zeros((sinoIn.shape[0],sinoSize))
+        shft = center-sinoIn.shape[1]/2
+        lr = sino.shape[1]/2-sinoIn.shape[1]/2+shft
+        rr = sino.shape[1]/2+sinoIn.shape[1]/2+shft
+        sino[:,lr:rr]=sinoIn
+        sino[:,0:lr] = np.tile(sino[:,lr],(lr,1)).transpose()
+        sino[:,rr:sino.shape[1]] = np.tile(sino[:,rr-1],(sino.shape[1]-rr,1)).transpose()
+        return sino
+        
+    
+    def __getitem__(self,i):
+        '''
+        Get image ``i`` from the set.
+        
+        :returns: :class:`tuple` of :class:`numpy.ndarray` -- (image, sinogram, angles)
+        '''
+        if i<0 or i>=self.nImages:
+            raise IndexError()
+        image = fl[self.recname]
+        sinoIn = self.readImageDmp(self.sfiles[i])
+        if self.sinoSize==None:
+            sino = sinoIn
+        else:
+            sino = self.padAndCenter(sinoIn,self.sinoSize,self.center)
+        angles = self.angles.copy()
+        if self.rfiles==None:
+            image = p.reconstruct('FBP_CUDA',sino)
+        else:
+            image = self.readImageDmp(self.rfiles[i])
+        if not self.nproj==None:
+            picked = np.array(np.round(np.linspace(0,sino.shape[0],self.nproj,False)),dtype=np.int)
+            sino = sino[picked,:]
+            angles = angles[picked]
+        if 'mask' in fl:
+            return (image,sino,angles,fl['mask'])  
+        else:
+            return (image,sino,angles)  
+
 class MATSet(object):
     def __init__(self,files,angles,nproj=None,sinoname='sino',recname='rec'):
         self.nImages = len(files)
