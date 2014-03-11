@@ -175,7 +175,7 @@ class EDFSet(object):
         return (image,sino,angles)
 
 class DMPSet(object):
-    def __init__(self,sinofiles,angles,recfiles=None,nproj=None,sinoSize=None,center=None):
+    def __init__(self,sinofiles,angles,recfiles=None,nproj=None,sinoSize=None,center=None,proj=None):
         self.nImages = len(sinofiles)
         self.angles = angles
         self.nproj=nproj
@@ -183,6 +183,7 @@ class DMPSet(object):
         self.rfiles = recfiles
         self.sinoSize = sinoSize
         self.center = center
+        self.p = proj
         
     def __len__(self):
         return self.nImages
@@ -226,7 +227,7 @@ class DMPSet(object):
             sino = self.padAndCenter(sinoIn,self.sinoSize,self.center)
         angles = self.angles.copy()
         if self.rfiles==None:
-            image = p.reconstruct('FBP_CUDA',sino)
+            image = self.p.reconstruct('FBP_CUDA',sino)
         else:
             image = self.readImageDmp(self.rfiles[i])
         if not self.nproj==None:
