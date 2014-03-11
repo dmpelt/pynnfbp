@@ -249,7 +249,7 @@ class Network(object):
         self.vTD.close()
         self.__createFilters()
     
-    def reconstruct(self,sinogram):
+    def reconstruct(self,sinogram,clipCircle=True):
         '''Reconstruct an image from a sinogram, after training.
         
         :param sinogram: The sinogram to reconstruct.
@@ -264,7 +264,7 @@ class Network(object):
         reco = self.__sigmoid(reco-self.l2[-1])
         #scipy.weave.inline(self.inplaceScaleCode,['minIn','maxIn','reco','size'],compiler = 'gcc',verbose=1,extra_compile_args=['-march=native','-fopenmp'],extra_link_args=['-lgomp'])
         reco = (reco-0.25)*2*(self.maxIn-self.minIn) + self.minIn
-        reco[self.outCircle]=0
+        if clipCircle: reco[self.outCircle]=0
         return reco
     
     def saveToDisk(self,fn):
