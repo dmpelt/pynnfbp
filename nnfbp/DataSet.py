@@ -219,7 +219,6 @@ class DMPSet(object):
         '''
         if i<0 or i>=self.nImages:
             raise IndexError()
-        image = fl[self.recname]
         sinoIn = self.readImageDmp(self.sfiles[i])
         if self.sinoSize==None:
             sino = sinoIn
