@@ -1,0 +1,37 @@
+package:
+  name: nnfbp
+  version: '1.1'
+
+source:
+  git_url: https://github.com/dmpelt/pynnfbp.git
+  git_tag: 1.1
+
+build:
+  number: 0
+
+test:
+  imports:
+    - nnfbp
+
+requirements:
+  build:
+    - python
+
+  run:
+    - python
+    - astra-toolbox
+    - scipy
+    - six
+    - numpy
+    - numexpr
+    - pytables
+    - tifffile
+
+about:
+  home: http://dmpelt.github.io/pynnfbp/
+  license: GPLv3
+  summary: 'Python implementation of the NN-FBP tomographic reconstruction method, published in Pelt, D., & Batenburg, K. (2013). Fast tomographic reconstruction from limited data using artificial neural networks. Image Processing, IEEE Transactions on, 22(12), pp.5238-5251'
+
+# See
+# http://docs.continuum.io/conda/build.html for
+# more information about meta.yaml
