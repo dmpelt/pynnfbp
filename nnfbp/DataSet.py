@@ -275,9 +275,6 @@ class MATSet(object):
         else:
             return (image,sino,angles)  
 
-        
-		
-    
 class HDF5Set(object):
     '''Dataset defined by a HDF5 file. The HDF5 file should contain an array with the name 
     ``nameArray`` (default:``'names'``), which has a row for each image. The first column

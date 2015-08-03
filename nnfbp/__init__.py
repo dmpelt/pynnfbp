@@ -28,3 +28,4 @@ from Network import Network, readFromDisk
 from DataSet import PhantomSet, HDF5Set
 from Reductors import IdentityReductor,LogSymReductor
 import Phantoms
+from astra_plugin import plugin_prepare, plugin_train, plugin_rec

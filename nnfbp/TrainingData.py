@@ -33,6 +33,8 @@ try:
 except ImportError:
 	hastables=False
 
+import scipy.io as sio
+
 import sys
 import os
 import math
@@ -230,3 +232,31 @@ class HDF5TrainingData(TrainingData):
         self.compression = compression
         self.comprl = comprl
         super(HDF5TrainingData, self).__init__(data,nPoints,network,blockSize)
+
+
+class MATTrainingData(TrainingData):
+    '''Implementation of :class:`TrainingData` that uses a MAT files to store data.
+    '''
+    
+    def getDataBlock(self,i):
+        if not self.tileM is None:
+            data = sio.loadmat(self.fls[i])[self.dataname]
+            data[:,0:self.nPar] =2*(data[:,0:self.nPar]-self.tileM)/self.maxmin - 1
+            data[:,self.nPar] = 0.25+(data[:,self.nPar]-self.minIn)/(2*(self.maxIn-self.minIn))
+            return data
+        else:
+            return sio.loadmat(self.fls[i])[self.dataname]
+    
+    def normalizeData(self,minL,maxL,minIn,maxIn):
+        data = sio.loadmat(self.fls[0])[self.dataname]
+        self.tileM = np.tile(minL, (data.shape[0],1))
+        self.maxmin = np.tile(maxL-minL, (data.shape[0],1))
+        self.minIn = minIn
+        self.maxIn = maxIn
+    
+    def __init__(self,fls,dataname='mat'):
+        self.fls = fls
+        self.nBlocks = len(fls)
+        self.dataname = dataname
+        self.tileM = None
+        self.nPar = (sio.loadmat(self.fls[0])[self.dataname]).shape[1]-1
