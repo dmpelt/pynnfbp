@@ -27,12 +27,6 @@
 import tempfile
 import numpy as np
 
-hastables=True
-try:
-	import tables as ts
-except ImportError:
-	hastables=False
-
 import scipy.io as sio
 
 import sys
@@ -66,7 +60,7 @@ class TrainingData(object):
         '''Return a list of the location of ``nToPick`` randomly selected pixels.'''
         nTimesToDo = int(math.ceil(nToPick/float(len(self.idx))))
         iList = []
-        for i in xrange(nTimesToDo):
+        for i in range(nTimesToDo):
             iList.extend(self.idx)
         return zip(*random.sample(iList,nToPick))
     
@@ -77,7 +71,7 @@ class TrainingData(object):
         idx = zip(x,y)
         nTimesToDo = int(math.ceil(nToPick/float(len(idx))))
         iList = []
-        for i in xrange(nTimesToDo):
+        for i in range(nTimesToDo):
             iList.extend(idx)
         return zip(*random.sample(iList,nToPick))
     
@@ -96,7 +90,7 @@ class TrainingData(object):
         self.nBlocks=0
         nInBlock=0
         i=0
-        for i in xrange(len(data)):
+        for i in range(len(data)):
             example = data[i]
             nToPick = pickArray[i]
             
@@ -108,7 +102,7 @@ class TrainingData(object):
                 pickedIndices = self.__getPickedIndicesWithMask(nToPick,example[3])
             else:
                 pickedIndices = self.__getPickedIndices(nToPick)
-            for j in xrange(nParameters):
+            for j in range(nParameters):
                 backImage = network.proj.reconstructWithFilter(sino,network.red.filters[:,j])
                 curData[:nToPick,j] = backImage[pickedIndices]
             curData[:nToPick,nParameters] = image[pickedIndices]
@@ -170,7 +164,7 @@ class TrainingData(object):
         maxL.fill(-np.inf)
         maxIn = -np.inf
         minIn = np.inf
-        for i in xrange(self.nBlocks):
+        for i in range(self.nBlocks):
             data = self.getDataBlock(i)
             if data == None:
                 continue
@@ -189,50 +183,6 @@ class TrainingData(object):
     def close(self):
         '''Close the underlying file.'''
         os.remove(self.fn)
-
-class HDF5TrainingData(TrainingData):
-    '''Implementation of :class:`TrainingData` that uses a HDF5 file to store data.
-    
-    :param compression: Which PyTables compression option to use.
-    :type compression: :class:`string`
-    :param comprl: Which PyTables compression level to use.
-    :type comprl: :class:`int`
-    '''
-    
-    def getDataBlock(self,i):
-        h5file = ts.openFile(self.fn, mode='r', title="")
-        try:
-            data = h5file.getNode(h5file.root, "data%d" % i).read()
-        except ts.exceptions.NoSuchNodeError:
-            data = None
-        h5file.close()
-        return data
-    
-    def addDataBlock(self,data,i):
-        h5file = ts.openFile(self.fn, mode='a', title="")
-        atom = ts.Atom.from_dtype(data.dtype)
-        filters = ts.Filters(complib=self.compression, complevel=self.comprl)
-        ds = h5file.createCArray(h5file.root, "data%d" % i, atom,data.shape,filters=filters)
-        ds[:] = data
-        h5file.close()
-    
-    def normalizeData(self,minL,maxL,minIn,maxIn):
-        h5file = ts.openFile(self.fn, mode='a', title="")
-        for i in xrange(self.nBlocks):
-            data = h5file.getNode(h5file.root, "data%d" % i)
-            tileM = np.tile(minL, (data.shape[0],1))
-            maxmin = np.tile(maxL-minL, (data.shape[0],1))
-            data[:,0:self.nPar] =2*(data[:,0:self.nPar]-tileM)/maxmin - 1  
-            data[:,self.nPar] = 0.25+(data[:,self.nPar]-minIn)/(2*(maxIn-minIn))
-        h5file.close()
-    
-    def __init__(self,data,nPoints,network,blockSize=10000,compression='blosc',comprl=9):
-        if not hastables:
-            raise Exception("PyTables has to be installed to use HDF5TrainingData")
-        self.compression = compression
-        self.comprl = comprl
-        super(HDF5TrainingData, self).__init__(data,nPoints,network,blockSize)
-
 
 class MATTrainingData(TrainingData):
     '''Implementation of :class:`TrainingData` that uses a MAT files to store data.

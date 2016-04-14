@@ -25,42 +25,65 @@
 #-----------------------------------------------------------------------
 
 import nnfbp
-from nnfbp.ASTRAProjector import ASTRAProjector2D
 import astra
 import numpy as np
+import scipy.io as sio
+import os
+import tifffile
+
+# Geometry details: number of projections, size of dataset, and amount of noise
+na = 64
+nd = 256
+ns = 128
+i0 = 10**3
 
 # Create ASTRA geometries
-vol_geom = astra.create_vol_geom(256,256)
-proj_geom = astra.create_proj_geom('parallel',1.0,256,np.linspace(0,np.pi,64,False))
+vol_geom = astra.create_vol_geom(nd,nd)
+proj_geom = astra.create_proj_geom('parallel',1.0,nd,np.linspace(0,np.pi,na,False))
 
 # Create the ASTRA projector
-p = ASTRAProjector2D(proj_geom,vol_geom)
+pid = astra.create_projector('linear',proj_geom,vol_geom) # change 'linear' to 'cuda' to use GPU
+p = astra.OpTomo(pid)
 
+# Create simulated HQ dataset for training
+hq = np.zeros((ns,nd,nd))
+hq[:,nd//4:3*nd//4,nd//4:3*nd//4]=1
+hq[:,3*nd//8:5*nd//8,3*nd//8:5*nd//8]=0
 
-# Define the training and validation set
-# Note that we use simulation phantoms as dataset
-# If you have existing data, use HDF5Set or define
-# a custom DataSet class.
-phantom = nnfbp.Phantoms.ThreeShape(256)
-trainingSet = nnfbp.PhantomSet(p,phantom,100)
-validationSet = nnfbp.PhantomSet(p,phantom,100)
+try:
+    os.mkdir('hqrecs/')
+except OSError:
+    pass
+projections = np.zeros((ns, na, nd))
+for i in range(ns):
+    projections[i] = astra.add_noise_to_sino((p*hq[i]).reshape(p.sshape),i0)
+    tifffile.imsave('hqrecs/{:04d}.tiff'.format(i),hq[i])
 
-# Define a NN-FBP Network with 8 hidden nodes.
-# Note that we only use 1000 pixels for the training set and validation set
-# In practice, more pixels should be used for better results
-network = nnfbp.Network(8,p,trainingSet,validationSet,nTrain=1000,nVal=1000)
+# Prepare training files
+astra.plugin.register(nnfbp.plugin_prepare)
+try:
+    os.mkdir('trainfiles/')
+except OSError:
+    pass
+for i in range(ns):
+    p.reconstruct('NN-FBP-prepare',projections[i],extraOptions={'hqrecfiles':'hqrecs/*.tiff','z_id':i,'traindir':'trainfiles/','npick':1000})
 
-# Train the network on the given data
-network.train()
+# Train filters and weights
+nnfbp.plugin_train('trainfiles/', 4, 'filters.mat')
 
-# Create a test phantom and calculate its forward projection
-testPhantom = phantom.get()
-testSino = p*testPhantom
+# Generate test sinogram
+testSino = astra.add_noise_to_sino((p*hq[ns//2]).reshape(p.sshape),i0)
 
-# Reconstruct the image using the trained network, FBP, and SIRT.
-nnRec = network.reconstruct(testSino)
-fbpRec = p.reconstruct('FBP_CUDA',testSino)
-sirtRec = p.reconstruct('SIRT_CUDA',testSino,1000)
+# Reconstruct the image using NN-FBP, FBP, and SIRT.
+astra.plugin.register(nnfbp.plugin_rec)
+nnRec = p.reconstruct('NN-FBP',testSino,extraOptions={'filter_file':'filters.mat'})
+if astra.projector.is_cuda(pid):
+    fbpRec = p.reconstruct('FBP_CUDA',testSino)
+    sirtRec = p.reconstruct('SIRT_CUDA',testSino,1000)
+else:
+    fbpRec = p.reconstruct('FBP',testSino)
+    sirtRec = p.reconstruct('SIRT',testSino,1000)
+
 
 # Show the different reconstructions on screen
 import pylab
@@ -68,7 +91,7 @@ pylab.gray()
 pylab.subplot(141)
 pylab.axis('off')
 pylab.title('Phantom')
-pylab.imshow(testPhantom,vmin=0,vmax=1)
+pylab.imshow(hq[ns//2],vmin=0,vmax=1)
 pylab.subplot(142)
 pylab.axis('off')
 pylab.title('NNFBP')
@@ -83,13 +106,3 @@ pylab.title('SIRT-1000')
 pylab.imshow(sirtRec,vmin=0,vmax=1)
 pylab.tight_layout()
 pylab.show()
-
-# Save the network to disk, so it can be used later.
-network.saveToDisk('exampleNetworkASTRA.h5')
-
-# Load the saved network from disk.
-# Note that a similar projector as the one it was trained with has to be
-# given. After loading a network, it can be used to reconstruct images
-# without retraining.
-networkLoaded = nnfbp.readFromDisk('exampleNetworkASTRA.h5',p)
-nnRec2 = networkLoaded.reconstruct(testSino)
