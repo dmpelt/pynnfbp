@@ -24,6 +24,7 @@ requirements:
     - six
     - numpy
     - tifffile
+    - numexpr
 
 about:
   home: http://dmpelt.github.io/pynnfbp/
