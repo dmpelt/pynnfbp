@@ -463,11 +463,13 @@ class plugin_rec(astra.plugin.ReconstructionAlgorithm2D):
         divmaxmin[np.isinf(divmaxmin)]=0
         nHid = self.l1.shape[1]
         nsl = len(extra_ids)+1
-        self.filters = np.empty((nHid,nsl,*self.basis[0].shape))
+        dims = [nHid,nsl,]
+        dims.extend(self.basis[0].shape)
+        self.filters = np.empty(dims)
         self.offsets = np.empty(nHid)
         for i in range(nHid):
             wv = (2*self.l1[0:self.l1.shape[0]-1,i]*divmaxmin).transpose()
-            self.filters[i] = np.zeros((nsl,*self.basis[0].shape))
+            self.filters[i] = np.zeros(dims[1:])
             for t, bas in enumerate(self.basis):
                 for l in range(nsl):
                     self.filters[i,l] += wv[t+l*len(self.basis)]*bas
