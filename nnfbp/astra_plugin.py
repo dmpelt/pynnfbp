@@ -282,7 +282,10 @@ class Network(object):
         self.allls = []
         for i in range(1000000):
             self.__setJac2()
-            dw = -la.cho_solve(la.cho_factor(self.jac2 + mu * self.ident), self.jacDiff)
+            try:
+                dw = -la.cho_solve(la.cho_factor(self.jac2 + mu * self.ident), self.jacDiff)
+            except la.LinAlgError:
+                break
             done = -1
             while done <= 0:
                 self.l2 += dw[0:self.nHid + 1]
