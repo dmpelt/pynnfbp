@@ -154,7 +154,7 @@ class TrainingData(object):
         
         :returns: :class:`tuple` with:
         - ``minL`` -- :class:`numpy.ndarray` with minimum value of each column except last.
-        - ``maxL`` -- :class:`numpy.ndarray` with minimum value of each column except last.
+        - ``maxL`` -- :class:`numpy.ndarray` with maximum value of each column except last.
         - ``minIn`` -- :class:`float` minimum values of last column.
         - ``maxIn`` -- :class:`float` maximum values of last column.
         '''
